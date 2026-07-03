@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+:root {
+  --color-void: #050307;
+  --color-ink: #0b0710;
+  --color-surface: #150d16;
+  --color-surface-raised: #1f1420;
+  --color-border: rgba(212, 175, 106, 0.16);
+  --color-border-strong: rgba(212, 175, 106, 0.32);
+  --color-gold: #d4af6a;
+  --color-gold-bright: #f2d38f;
+  --color-wine: #7a1f3d;
+  --color-wine-bright: #b6335c;
+  --color-rose: #e8b4c8;
+  --color-text: #f4ecdf;
+  --color-text-muted: #ab9c9f;
+  --color-danger: #e0577a;
+  --color-success: #7fbf9e;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Manrope", sans-serif;
+}
+
+@theme inline {
+  --color-void: var(--color-void);
+  --color-ink: var(--color-ink);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-gold: var(--color-gold);
+  --color-gold-bright: var(--color-gold-bright);
+  --color-wine: var(--color-wine);
+  --color-wine-bright: var(--color-wine-bright);
+  --color-rose: var(--color-rose);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-danger: var(--color-danger);
+  --color-success: var(--color-success);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  background: var(--color-void);
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(122, 31, 61, 0.35), transparent 60%),
+    radial-gradient(ellipse 700px 600px at 100% 0%, rgba(212, 175, 106, 0.12), transparent 55%),
+    var(--color-void);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  min-height: 100dvh;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+#__next,
+main {
+  position: relative;
+  z-index: 1;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--color-wine-bright);
+  color: var(--color-text);
+}
+
+/* ---------- primitives ---------- */
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: all 200ms;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+@utility badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  border-width: 1px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-6;
+  }
+
+  .glass-card {
+    @apply relative rounded-2xl border bg-[var(--color-surface)]/80 backdrop-blur-xl;
+    border-color: var(--color-border);
+    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+  }
+
+  .btn-primary {
+    @apply btn text-[#1a0f10];
+    background: linear-gradient(135deg, var(--color-gold-bright), var(--color-gold));
+    box-shadow: 0 8px 24px -8px rgba(212, 175, 106, 0.55);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 10px 30px -6px rgba(212, 175, 106, 0.75);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    @apply btn border text-[var(--color-text)];
+    border-color: var(--color-border-strong);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--color-gold);
+  }
+
+  .btn-danger {
+    @apply btn text-white;
+    background: linear-gradient(135deg, var(--color-danger), var(--color-wine));
+  }
+
+  .field-label {
+    @apply mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)];
+  }
+
+  .field-input {
+    @apply w-full rounded-xl border bg-black/30 px-4 py-3 text-[var(--color-text)] outline-none transition-colors placeholder:text-[var(--color-text-muted)]/60;
+    border-color: var(--color-border);
+  }
+  .field-input:focus {
+    border-color: var(--color-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 106, 0.15);
+  }
+
+  /* The dropdown popup of a <select> mostly ignores CSS, but Chromium and
+     Firefox both honor background/color set directly on its <option>s. */
+  select.field-input,
+  select.field-input option {
+    background-color: var(--color-surface-raised);
+    color: var(--color-text);
+  }
+  select.field-input option:checked {
+    background-color: var(--color-wine);
+  }
+
+  .badge-user { @apply badge; border-color: var(--color-border-strong); color: var(--color-text-muted); }
+  .badge-creator { @apply badge; border-color: var(--color-rose); color: var(--color-rose); }
+  .badge-admin { @apply badge; border-color: var(--color-gold); color: var(--color-gold); }
+  .badge-founder { @apply badge; border-color: var(--color-gold-bright); color: var(--color-gold-bright); background: rgba(212,175,106,0.1); }
+
+  .form-error {
+    @apply rounded-xl border px-4 py-3 text-sm;
+    border-color: rgba(224, 87, 122, 0.4);
+    background: rgba(224, 87, 122, 0.08);
+    color: var(--color-danger);
+  }
+
+  .link-gold {
+    color: var(--color-gold);
+    text-underline-offset: 3px;
+  }
+  .link-gold:hover {
+    color: var(--color-gold-bright);
+    text-decoration: underline;
+  }
+}

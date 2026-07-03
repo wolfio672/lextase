@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  CREATOR
+  ADMIN
+  FOUNDER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  username           String    @unique
+  displayName        String
+  passwordHash       String
+  role               Role      @default(USER)
+  bio                String    @default("")
+  avatarUrl          String?
+  bannerUrl          String?
+
+  emailVerified      Boolean   @default(false)
+  emailVerifiedAt    DateTime?
+
+  twoFactorEnabled   Boolean   @default(false)
+  twoFactorSecret    String?
+  twoFactorRecoveryCodes String? // JSON-encoded array of hashed recovery codes
+  lastTotpTimeStep   Int?      // anti-replay: rejects reuse of an already-consumed TOTP code
+
+  failedLoginCount   Int       @default(0)
+  lockedUntil        DateTime?
+
+  isBanned           Boolean   @default(false)
+  bannedReason       String?
+
+  isVerified         Boolean   @default(false)
+
+  stripeCustomerId   String?   @unique
+  subscriptionPriceCents Int?  // prix mensuel fixé par le·la créateur·rice ; null/0 = abonnement gratuit
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  sessions           Session[]
+  posts              Post[]
+  media              Media[]
+  subscriptionsMade  Subscription[] @relation("Subscriber")
+  subscriptionsRecv  Subscription[] @relation("Creator")
+  auditLogsActor     AuditLog[]     @relation("Actor")
+  auditLogsTarget    AuditLog[]     @relation("Target")
+  loginAttempts      LoginAttempt[]
+  messagesSent       Message[]      @relation("MessagesSent")
+  messagesReceived   Message[]      @relation("MessagesReceived")
+
+  @@index([role])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  tokenHash    String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent    String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email      String
+  ipAddress  String
+  success    Boolean
+  createdAt  DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  caption     String   @default("")
+  isPremium   Boolean  @default(false)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  media       Media[]
+
+  @@index([authorId, createdAt])
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  url       String
+  type      String   // "image" | "video"
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  subscriberId  String
+  subscriber    User               @relation("Subscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+  creatorId     String
+  creator       User               @relation("Creator", fields: [creatorId], references: [id], onDelete: Cascade)
+  status        SubscriptionStatus @default(ACTIVE)
+  startedAt     DateTime           @default(now())
+  endsAt        DateTime?
+  stripeSubscriptionId String?     @unique
+
+  @@unique([subscriberId, creatorId])
+  @@index([creatorId, status])
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  senderId    String
+  sender      User      @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("MessagesReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  content     String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, senderId, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("Actor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetId   String?
+  target     User?    @relation("Target", fields: [targetId], references: [id], onDelete: SetNull)
+  action     String
+  metadata   String?  // JSON-encoded details
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([targetId, createdAt])
+}
