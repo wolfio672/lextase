@@ -196,27 +196,27 @@ export async function requestPasswordResetAction(
   const { email } = parsed.data;
   const ipAddress = await getClientIp();
 
-  // Same response whether or not the account exists, and rate-limited the same
-  // way as login, so this can't be used to enumerate registered emails.
   if (await isIpRateLimited(ipAddress)) {
-    return { success: true };
+    return { error: "Trop de tentatives depuis cette adresse, réessayez plus tard" };
   }
 
   const user = await db.user.findUnique({ where: { email }, select: { id: true } });
-  if (user) {
-    const token = randomToken(32);
-    const tokenHash = sha256Hex(token);
-    await db.passwordResetToken.deleteMany({ where: { userId: user.id } });
-    await db.passwordResetToken.create({
-      data: {
-        tokenHash,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000),
-      },
-    });
-    await sendPasswordResetEmail(email, `${appUrl()}/reset-password/${token}`);
-    await writeAuditLog({ actorId: user.id, targetId: user.id, action: "user.password_reset_requested", ipAddress });
+  if (!user) {
+    return { error: "Aucun compte n'existe avec cette adresse e-mail" };
   }
+
+  const token = randomToken(32);
+  const tokenHash = sha256Hex(token);
+  await db.passwordResetToken.deleteMany({ where: { userId: user.id } });
+  await db.passwordResetToken.create({
+    data: {
+      tokenHash,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000),
+    },
+  });
+  await sendPasswordResetEmail(email, `${appUrl()}/reset-password/${token}`);
+  await writeAuditLog({ actorId: user.id, targetId: user.id, action: "user.password_reset_requested", ipAddress });
 
   return { success: true };
 }
