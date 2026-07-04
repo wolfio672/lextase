@@ -1,11 +1,12 @@
 import "dotenv/config";
 import path from "node:path";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
-// Netlify's production/CI builds only inject NETLIFY_DATABASE_URL, never
-// DATABASE_URL itself; local dev sets DATABASE_URL directly in .env.
-if (!process.env.DATABASE_URL && process.env.NETLIFY_DATABASE_URL) {
-  process.env.DATABASE_URL = process.env.NETLIFY_DATABASE_URL;
+// Netlify Database (le module @netlify/database) injecte la connection
+// string dans NETLIFY_DB_URL — disponible dans les builds, functions et
+// edge functions. En dev local, DATABASE_URL est défini directement dans .env.
+if (!process.env.DATABASE_URL && process.env.NETLIFY_DB_URL) {
+  process.env.DATABASE_URL = process.env.NETLIFY_DB_URL;
 }
 
 export default defineConfig({
@@ -15,6 +16,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    url: process.env.DATABASE_URL,
   },
 });

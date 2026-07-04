@@ -53,6 +53,7 @@ model User {
   updatedAt          DateTime  @updatedAt
 
   sessions           Session[]
+  passwordResetTokens PasswordResetToken[]
   posts              Post[]
   media              Media[]
   subscriptionsMade  Subscription[] @relation("Subscriber")
@@ -76,6 +77,17 @@ model Session {
   createdAt    DateTime @default(now())
   expiresAt    DateTime
   revokedAt    DateTime?
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 
   @@index([userId])
 }

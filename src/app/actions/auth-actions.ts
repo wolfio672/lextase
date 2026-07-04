@@ -6,6 +6,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import {
   createSession,
   destroyCurrentSession,
+  destroyAllSessionsForUser,
   getClientIp,
   getPending2FAUserId,
   clearPending2FACookie,
@@ -14,7 +15,19 @@ import {
 import { isIpRateLimited, isAccountLocked, recordLoginAttempt, registerFailedLogin, resetFailedLogins } from "@/lib/rateLimit";
 import { writeAuditLog } from "@/lib/audit";
 import { hashRecoveryCode, verifyTotpToken } from "@/lib/twofactor";
-import { loginSchema, registerSchema, twoFactorTokenSchema, recoveryCodeSchema } from "@/lib/validation";
+import { randomToken, sha256Hex } from "@/lib/crypto";
+import { sendPasswordResetEmail } from "@/lib/email";
+import { appUrl } from "@/lib/stripe";
+import {
+  loginSchema,
+  registerSchema,
+  twoFactorTokenSchema,
+  recoveryCodeSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "@/lib/validation";
+
+const RESET_TOKEN_TTL_MINUTES = 30;
 
 export type ActionState = { error?: string } | null;
 
@@ -168,4 +181,77 @@ export async function verify2FAAction(_prev: ActionState, formData: FormData): P
 export async function logoutAction(): Promise<void> {
   await destroyCurrentSession();
   redirect("/login");
+}
+
+export type ForgotPasswordState = { error?: string; success?: boolean } | null;
+
+export async function requestPasswordResetAction(
+  _prev: ForgotPasswordState,
+  formData: FormData,
+): Promise<ForgotPasswordState> {
+  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
+  }
+  const { email } = parsed.data;
+  const ipAddress = await getClientIp();
+
+  // Same response whether or not the account exists, and rate-limited the same
+  // way as login, so this can't be used to enumerate registered emails.
+  if (await isIpRateLimited(ipAddress)) {
+    return { success: true };
+  }
+
+  const user = await db.user.findUnique({ where: { email }, select: { id: true } });
+  if (user) {
+    const token = randomToken(32);
+    const tokenHash = sha256Hex(token);
+    await db.passwordResetToken.deleteMany({ where: { userId: user.id } });
+    await db.passwordResetToken.create({
+      data: {
+        tokenHash,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000),
+      },
+    });
+    await sendPasswordResetEmail(email, `${appUrl()}/reset-password/${token}`);
+    await writeAuditLog({ actorId: user.id, targetId: user.id, action: "user.password_reset_requested", ipAddress });
+  }
+
+  return { success: true };
+}
+
+export async function resetPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = resetPasswordSchema.safeParse({
+    token: formData.get("token"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
+  }
+  const { token, password } = parsed.data;
+  const tokenHash = sha256Hex(token);
+
+  const resetToken = await db.passwordResetToken.findUnique({ where: { tokenHash } });
+  if (!resetToken || resetToken.expiresAt < new Date()) {
+    return { error: "Ce lien de réinitialisation est invalide ou a expiré" };
+  }
+
+  const passwordHash = await hashPassword(password);
+  const ipAddress = await getClientIp();
+
+  await db.user.update({
+    where: { id: resetToken.userId },
+    data: { passwordHash, failedLoginCount: 0, lockedUntil: null },
+  });
+  await db.passwordResetToken.deleteMany({ where: { userId: resetToken.userId } });
+  await destroyAllSessionsForUser(resetToken.userId);
+  await writeAuditLog({
+    actorId: resetToken.userId,
+    targetId: resetToken.userId,
+    action: "user.password_reset",
+    ipAddress,
+  });
+
+  redirect("/login?reset=1");
 }

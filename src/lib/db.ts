@@ -12,9 +12,9 @@ function createPrismaClient(connectionString: string) {
 }
 
 function getConnectionString() {
-  const connectionString = process.env.DATABASE_URL ?? process.env.NETLIFY_DATABASE_URL;
+  const connectionString = process.env.DATABASE_URL ?? process.env.NETLIFY_DB_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL (or NETLIFY_DATABASE_URL) is not set");
+    throw new Error("DATABASE_URL (or NETLIFY_DB_URL) is not set");
   }
   return connectionString;
 }

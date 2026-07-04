@@ -29,7 +29,12 @@ export function LoginForm() {
           <input id="email" name="email" type="email" autoComplete="email" required className="field-input" />
         </div>
         <div>
-          <label className="field-label" htmlFor="password">Mot de passe</label>
+          <div className="flex items-center justify-between">
+            <label className="field-label" htmlFor="password">Mot de passe</label>
+            <Link href="/forgot-password" className="link-gold text-sm">
+              Mot de passe oublié ?
+            </Link>
+          </div>
           <input
             id="password"
             name="password"

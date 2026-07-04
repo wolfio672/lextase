@@ -37,6 +37,15 @@ export const recoveryCodeSchema = z
   .trim()
   .regex(/^[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}$/i, "Format de code de récupération invalide");
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Adresse e-mail invalide").max(255),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1).max(255),
+  password: passwordSchema,
+});
+
 export const changeRoleSchema = z.object({
   userId: z.string().min(1).max(64),
   role: z.enum(["USER", "CREATOR", "ADMIN", "FOUNDER"]),

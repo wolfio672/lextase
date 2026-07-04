@@ -11,9 +11,10 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@netlify/blobs@^10.7.9",
         "npm:@netlify/database@^1.1.0",
-        "npm:@prisma/adapter-better-sqlite3@^7.8.0",
-        "npm:@prisma/adapter-neon@^7.8.0",
+        "npm:@netlify/plugin-nextjs@^5.15.12",
+        "npm:@prisma/adapter-pg@^7.8.0",
         "npm:@prisma/client@^7.8.0",
         "npm:@tailwindcss/postcss@4",
         "npm:@types/node@20",
@@ -21,12 +22,12 @@
         "npm:@types/react-dom@19",
         "npm:@types/react@19",
         "npm:bcryptjs@^3.0.3",
-        "npm:better-sqlite3@^12.11.1",
         "npm:dotenv@^17.4.2",
         "npm:eslint-config-next@16.2.10",
         "npm:eslint@9",
         "npm:next@16.2.10",
         "npm:otplib@^13.4.1",
+        "npm:pg@^8.22.0",
         "npm:prisma@^7.8.0",
         "npm:qrcode@^1.5.4",
         "npm:react-dom@19.2.4",
