@@ -18,7 +18,7 @@ export default async function FeedPage() {
   });
 
   const creators = await db.user.findMany({
-    where: { role: { in: ["CREATOR"] }, isBanned: false },
+    where: { role: { in: ["CREATOR", "ADMIN", "FOUNDER"] }, isBanned: false },
     orderBy: { createdAt: "desc" },
     take: 6,
     select: { username: true, displayName: true, avatarUrl: true, isVerified: true },
