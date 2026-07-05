@@ -27,17 +27,17 @@ export function AppNav({ user }: { user: SessionUser }) {
   ];
 
   return (
-    <header className="border-b" style={{ borderColor: "var(--color-border)" }}>
+    <header className="relative border-b" style={{ borderColor: "var(--color-border)" }}>
       <div className="container-page flex items-center justify-between py-5">
         <div className="flex items-center gap-8">
           <SecretAdminLogo canAccessAdmin={hasRole(user, "ADMIN")} />
           <NavLinks items={navItems} />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <span className={ROLE_BADGE_CLASS[user.role]}>{ROLE_LABEL[user.role]}</span>
           <span className="hidden text-sm text-[var(--color-text-muted)] sm:inline">@{user.username}</span>
           <form action={logoutAction}>
-            <button type="submit" className="btn-ghost px-4 py-2 text-xs">
+            <button type="submit" className="btn-ghost px-3 py-2 text-xs sm:px-4">
               Déconnexion
             </button>
           </form>
